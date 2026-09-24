@@ -1,0 +1,96 @@
+# Paths are relative to the repository root. Add the training files yourself;
+# the included statistics JSON is documentation and is not training data.
+data_config:
+  train_file: data/train.jsonl
+  val_file: data/val.jsonl
+  test_file: null
+  num_proc: 12
+
+max_input_length: 3072
+max_output_length: 256
+combine: false
+freezeV: false
+
+# Set to "cloud" or "local" only if SwanLab is installed and configured.
+swanlab: disabled
+
+peft_config:
+  peft_type: LORA
+  task_type: CAUSAL_LM
+  r: 128
+  lora_alpha: 256
+  lora_dropout: 0.2
+  target_modules:
+    - q_proj
+    - k_proj
+    - v_proj
+    - o_proj
+    - gate_up_proj
+    - down_proj
+  bias: none
+  inference_mode: false
+
+training_args:
+  output_dir: output/glm4-psychology-lora
+  overwrite_output_dir: true
+  run_name: glm4-psychology-lora
+
+  num_train_epochs: 10
+  learning_rate: 1.5e-4
+  lr_scheduler_type: cosine_with_restarts
+  warmup_ratio: 0.05
+  lr_scheduler_kwargs:
+    num_cycles: 2
+
+  per_device_train_batch_size: 2
+  gradient_accumulation_steps: 16
+  per_device_eval_batch_size: 8
+
+  optim: adamw_torch_fused
+  adam_beta1: 0.9
+  adam_beta2: 0.95
+  adam_epsilon: 1.0e-8
+  weight_decay: 0.05
+  max_grad_norm: 1.0
+
+  dataloader_num_workers: 4
+  dataloader_pin_memory: true
+  remove_unused_columns: false
+
+  save_strategy: steps
+  save_steps: 224
+  save_total_limit: 2
+  save_safetensors: true
+
+  logging_strategy: steps
+  logging_steps: 10
+  logging_first_step: true
+  report_to: none
+
+  do_eval: true
+  eval_strategy: steps
+  eval_steps: 224
+  eval_accumulation_steps: 16
+
+  predict_with_generate: true
+  generation_config:
+    max_new_tokens: 256
+    num_beams: 1
+    temperature: 0.7
+    top_p: 0.8
+    top_k: 30
+    do_sample: true
+    repetition_penalty: 1.1
+    pad_token_id: 151329
+    eos_token_id: [151329, 151336, 151338]
+
+  bf16: true
+  bf16_full_eval: true
+  torch_compile: false
+  deepspeed: configs/ds_zero_3.json
+
+  seed: 42
+  load_best_model_at_end: true
+  metric_for_best_model: rouge-l
+  greater_is_better: true
+  ignore_data_skip: false
